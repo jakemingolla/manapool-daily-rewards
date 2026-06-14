@@ -22,7 +22,15 @@ packages = ["src/manapool"]
 [dependency-groups]
 dev = [
     "pytest>=8",
+    "ruff>=0.10",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

@@ -5,12 +5,11 @@ from __future__ import annotations
 import json
 
 import pytest
+from conftest import FakeResponse, FakeTransport
 
 from manapool.auth.login import login
 from manapool.config import Credentials, Settings
 from manapool.errors import ManaPoolError
-
-from conftest import FakeResponse, FakeTransport
 
 CREDS = Credentials(email="me@example.com", password="secret")
 SETTINGS = Settings()

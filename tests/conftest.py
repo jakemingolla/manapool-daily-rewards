@@ -67,9 +67,7 @@ class FakeTransport:
     def register(self, method: str, fragment: str, response: FakeResponse) -> None:
         self._routes[method].append((fragment, response))
 
-    def _respond(
-        self, method: str, url: str, kwargs: dict[str, Any]
-    ) -> FakeResponse:
+    def _respond(self, method: str, url: str, kwargs: dict[str, Any]) -> FakeResponse:
         self.calls.append((method, url, kwargs))
         for fragment, response in self._routes[method]:
             if fragment in url:

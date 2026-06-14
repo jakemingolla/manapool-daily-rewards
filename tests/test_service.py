@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+from conftest import FakeClient, RecordingConsole
+
 from manapool.config import Credentials
 from manapool.errors import ManaPoolError
 from manapool.models import ClaimResult, Status
 from manapool.service import DailyRewardService
-
-from conftest import FakeClient, RecordingConsole
 
 CREDS = Credentials(email="me@example.com", password="secret")
 
@@ -80,6 +80,5 @@ def test_eligible_claims_and_reports_award():
     assert code == 0
     assert client.claim_calls == [{"id": "1"}]
     assert any(
-        "Claimed! Awarded 10 Extra Mana (Daily)." in line
-        for line in console.out_lines
+        "Claimed! Awarded 10 Extra Mana (Daily)." in line for line in console.out_lines
     )

@@ -6,12 +6,11 @@ import base64
 import json
 
 import pytest
+from conftest import FakeCookie, FakeResponse, FakeTransport
 
 from manapool.client import ManaPoolClient
 from manapool.config import Settings
 from manapool.errors import ManaPoolError, NotAuthenticated
-
-from conftest import FakeCookie, FakeResponse, FakeTransport
 
 SETTINGS = Settings()
 
@@ -22,9 +21,7 @@ def _node_data_payload(*nodes):
 
 def test_fetch_node_data_redirect_raises_not_authenticated():
     transport = FakeTransport()
-    transport.register(
-        "GET", "/daily/__data.json", FakeResponse(status_code=302)
-    )
+    transport.register("GET", "/daily/__data.json", FakeResponse(status_code=302))
     client = ManaPoolClient(transport, SETTINGS)
     with pytest.raises(NotAuthenticated):
         client.fetch_node_data("/daily/__data.json")
@@ -112,10 +109,7 @@ def test_claim_parses_award_and_serializes_form():
     assert result.award_title == "Daily"
     sent_kwargs = transport.calls[0][2]
     assert sent_kwargs["data"] == {"flag": "true", "count": "5", "off": "false"}
-    assert (
-        sent_kwargs["headers"]["Content-Type"]
-        == "application/x-www-form-urlencoded"
-    )
+    assert sent_kwargs["headers"]["Content-Type"] == "application/x-www-form-urlencoded"
 
 
 def test_claim_http_error_raises():
