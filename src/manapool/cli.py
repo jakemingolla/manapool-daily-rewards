@@ -13,7 +13,7 @@ from manapool.config import (
     load_credentials,
 )
 from manapool.console import StreamConsole
-from manapool.service import DailyRewardService
+from manapool.service import DailyRewardService, ExitCode
 from manapool.transport import RequestsTransport
 
 
@@ -35,7 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> ExitCode:
     args = build_parser().parse_args(argv)
 
     console = StreamConsole(debug=args.debug)
@@ -45,7 +45,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         console.err(
             f"ERROR: set {USERNAME_ENV} and {PASSWORD_ENV} (e.g. in a .env file)."
         )
-        return 2
+        return ExitCode.AUTH_FAILED
 
     settings = Settings()
     transport = RequestsTransport(settings)
