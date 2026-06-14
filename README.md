@@ -73,12 +73,14 @@ Claimed! Awarded 10 Extra Mana.
 
 ### Exit codes
 
-| Code | Meaning |
-| --- | --- |
-| 0 | Success (status reported; reward claimed, already claimed, or check-only) |
-| 1 | Could not read status / claim failed |
-| 2 | Missing credentials or sign-in failed |
-| 3 | Claim requested but the account is not eligible |
+Defined as `ExitCode(IntEnum)` in `src/manapool/service.py`:
+
+| Code | Name | Meaning |
+| --- | --- | --- |
+| 0 | `SUCCESS` | Status reported; reward claimed, already claimed, or check-only |
+| 1 | `FAILURE` | Could not read status / claim failed |
+| 2 | `AUTH_FAILED` | Missing credentials or sign-in failed |
+| 3 | `NOT_ELIGIBLE` | Claim requested but the account is not eligible |
 
 ## Project layout
 
