@@ -22,7 +22,7 @@ install: uv ## Install dependencies
 	uv sync --frozen
 
 test:  ## Run tests
-	uv run pytest tests/
+	uv run pytest tests/ --cov=manapool
 
 lint:  ## Run linters
 	uv run ruff check && uv run mypy
