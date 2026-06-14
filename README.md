@@ -71,6 +71,16 @@ Claiming today's Daily Reward...
 Claimed! Awarded 10 Extra Mana.
 ```
 
+### Scheduled runs (GitHub Actions)
+
+`.github/workflows/daily-reward.yml` runs `manapool` daily at 01:00 UTC
+(9 PM EDT / 8 PM EST). To enable it on your fork, add two repository secrets:
+
+- `MANAPOOL_ACCOUNT_USERNAME`
+- `MANAPOOL_ACCOUNT_PASSWORD`
+
+You can also trigger the workflow manually from the Actions tab.
+
 ### Exit codes
 
 Defined as `ExitCode(IntEnum)` in `src/manapool/service.py`:
