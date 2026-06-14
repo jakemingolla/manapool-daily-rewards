@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from manapool import endpoints
 from manapool.auth import login as auth_login
 from manapool.auth import supabase_session_from_cookies
 from manapool.coerce import as_dict, as_int, as_str
@@ -16,6 +17,31 @@ from manapool.parsing import find_key, unflatten
 from manapool.transport import Transport
 
 _REDIRECT_CODES = (301, 302, 303, 307, 308)
+
+
+def _serialize_form_fields(form_data: Any) -> dict[str, str]:
+    """Coerce a SvelteKit form payload into ``x-www-form-urlencoded`` fields.
+
+    Booleans are encoded as ``"true"``/``"false"`` (SvelteKit's
+    ``request.formData()`` only yields strings, so we mirror its own
+    serialization). ``None`` values are dropped so optional fields don't show
+    up as the literal string ``"None"``. A non-dict ``form_data`` (e.g.
+    ``None`` when the page exposes no form) yields an empty dict, letting the
+    caller still ``POST`` the action with no explicit fields.
+    """
+    if not isinstance(form_data, dict):
+        return {}
+    body: dict[str, str] = {}
+    for key, value in form_data.items():
+        if value is None:
+            continue
+        if value is True:
+            body[key] = "true"
+        elif value is False:
+            body[key] = "false"
+        else:
+            body[key] = str(value)
+    return body
 
 
 class ManaPoolClient:
@@ -111,8 +137,9 @@ class ManaPoolClient:
         if not token:
             return {}
 
+        url = f"{self._settings.supabase_url}{endpoints.EXTRA_MANA}"
         resp = self._transport.get(
-            f"{self._settings.supabase_url}/rest/v1/extra_mana",
+            url,
             params={"select": "points,pending_points"},
             headers={
                 "apikey": self._settings.supabase_anon_key,
@@ -121,10 +148,7 @@ class ManaPoolClient:
             },
             timeout=self._settings.timeout,
         )
-        self._console.debug(
-            f"[debug] GET {self._settings.supabase_url}/rest/v1/extra_mana "
-            f"-> {resp.status_code}"
-        )
+        self._console.debug(f"[debug] GET {url} -> {resp.status_code}")
         if resp.status_code != 200:
             return {}
         try:
@@ -137,7 +161,7 @@ class ManaPoolClient:
 
     def get_status(self) -> Status:
         """Collect Daily Reward eligibility and Extra Mana balance."""
-        daily = self.fetch_node_data("/daily/__data.json")
+        daily = self.fetch_node_data(endpoints.DAILY_DATA)
         balance = self.fetch_extra_mana()
 
         form = daily.get("form")
@@ -152,21 +176,9 @@ class ManaPoolClient:
 
     def claim(self, form_data: dict[str, Any] | None) -> ClaimResult:
         """Submit the Daily Reward claim via the default ``POST /daily`` action."""
-        body: dict[str, str] = {}
-        if form_data:
-            for key, value in form_data.items():
-                if value is None:
-                    continue
-                if value is True:
-                    body[key] = "true"
-                elif value is False:
-                    body[key] = "false"
-                else:
-                    body[key] = str(value)
-
         resp = self._transport.post(
-            f"{self._settings.base_url}/daily",
-            data=body,
+            f"{self._settings.base_url}{endpoints.CLAIM_DAILY}",
+            data=_serialize_form_fields(form_data),
             headers={
                 "Origin": self._settings.base_url,
                 "Accept": "application/json",
