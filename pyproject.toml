@@ -21,6 +21,7 @@ packages = ["src/manapool"]
 
 [dependency-groups]
 dev = [
+    "mypy>=1.11",
     "pytest>=8",
     "ruff>=0.10",
 ]
@@ -35,3 +36,7 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+files = ["src"]
+strict = true
