@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Lint (ruff check)
+        run: make ruff-check
+
+      - name: Format check (ruff format --check)
+        run: make format-check
+
+      - name: Type check (mypy)
+        run: make typecheck
+
+      - name: Tests + coverage gate (>80% on changed code)
+        run: make coverage COVERAGE_COMPARE_BRANCH="origin/${{ github.base_ref || 'main' }}"
