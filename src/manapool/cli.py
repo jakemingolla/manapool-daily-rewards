@@ -43,8 +43,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     credentials = load_credentials()
     if credentials is None:
         console.err(
-            f"ERROR: set {USERNAME_ENV} and {PASSWORD_ENV} "
-            "(e.g. in a .env file)."
+            f"ERROR: set {USERNAME_ENV} and {PASSWORD_ENV} (e.g. in a .env file)."
         )
         return 2
 

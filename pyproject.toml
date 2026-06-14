@@ -23,11 +23,19 @@ packages = ["src/manapool"]
 dev = [
     "mypy>=1.11",
     "pytest>=8",
+    "ruff>=0.10",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
 
 [tool.mypy]
 files = ["src"]
