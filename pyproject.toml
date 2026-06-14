@@ -21,8 +21,13 @@ packages = ["src/manapool"]
 
 [dependency-groups]
 dev = [
+    "mypy>=1.11",
     "pytest>=8",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.mypy]
+files = ["src"]
+strict = true
