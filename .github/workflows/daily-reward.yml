@@ -1,0 +1,26 @@
+name: Daily Reward
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: daily-reward
+  cancel-in-progress: false
+
+jobs:
+  claim:
+    name: Claim
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - env:
+          MANAPOOL_ACCOUNT_USERNAME: ${{ secrets.MANAPOOL_ACCOUNT_USERNAME }}
+          MANAPOOL_ACCOUNT_PASSWORD: ${{ secrets.MANAPOOL_ACCOUNT_PASSWORD }}
+        run: uv run manapool
