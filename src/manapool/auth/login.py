@@ -6,6 +6,7 @@ import json
 from collections.abc import Callable
 from typing import Any
 
+from manapool import endpoints
 from manapool.config import Credentials, Settings
 from manapool.errors import ManaPoolError, NotAuthenticated
 from manapool.parsing import find_key, unflatten
@@ -31,7 +32,7 @@ def login(
     than trusting the cookie name.
     """
     resp = transport.post(
-        f"{settings.base_url}/auth",
+        f"{settings.base_url}{endpoints.SIGN_IN}",
         params={"/signin": ""},
         data={
             "email": credentials.email,
@@ -92,7 +93,7 @@ def extract_action_message(result: dict[str, Any]) -> str | None:
 def is_authenticated(fetch: SessionFetcher) -> bool:
     """Return whether the session backing ``fetch`` is logged in."""
     try:
-        data = fetch("/__data.json")
+        data = fetch(endpoints.SESSION_PROBE)
     except NotAuthenticated:
         return False
     return bool(data.get("user"))
