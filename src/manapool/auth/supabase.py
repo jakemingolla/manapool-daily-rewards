@@ -6,7 +6,8 @@ import base64
 import binascii
 import json
 import urllib.parse
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from manapool.console import Console
 
@@ -49,16 +50,18 @@ def supabase_session_from_cookies(
         padded = encoded + "=" * (-len(encoded) % 4)
         for decoder in (base64.urlsafe_b64decode, base64.b64decode):
             try:
-                return json.loads(decoder(padded))
+                session = json.loads(decoder(padded))
             except (binascii.Error, ValueError):
                 continue
+            return session if isinstance(session, dict) else None
         if console is not None:
             console.debug("[debug] failed to decode base64 auth cookie")
         return None
 
     try:
-        return json.loads(raw)
+        session = json.loads(raw)
     except ValueError:
         if console is not None:
             console.debug("[debug] auth cookie is not JSON")
         return None
+    return session if isinstance(session, dict) else None

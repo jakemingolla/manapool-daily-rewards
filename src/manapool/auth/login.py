@@ -64,10 +64,10 @@ def login(
         raise ManaPoolError(f"Sign-in rejected: {message}")
 
     if not is_authenticated(fetch):
-        message = extract_action_message(result) if isinstance(result, dict) else None
+        detail = extract_action_message(result) if isinstance(result, dict) else None
         raise ManaPoolError(
             "Sign-in did not establish a session"
-            + (f" ({message})" if message else "")
+            + (f" ({detail})" if detail else "")
         )
 
 
