@@ -8,7 +8,7 @@ import json
 import pytest
 from conftest import FakeCookie, FakeResponse, FakeTransport
 
-from manapool.client import ManaPoolClient
+from manapool.client import ManaPoolClient, _serialize_form_fields
 from manapool.config import Settings
 from manapool.errors import ManaPoolError, NotAuthenticated
 
@@ -118,3 +118,34 @@ def test_claim_http_error_raises():
     client = ManaPoolClient(transport, SETTINGS)
     with pytest.raises(ManaPoolError, match="Claim failed"):
         client.claim({})
+
+
+def test_serialize_form_fields_encodes_bools_as_lowercase_strings():
+    result = _serialize_form_fields({"a": True, "b": False})
+    assert result == {"a": "true", "b": "false"}
+
+
+def test_serialize_form_fields_drops_none_values():
+    assert _serialize_form_fields({"keep": "x", "drop": None}) == {"keep": "x"}
+
+
+def test_serialize_form_fields_stringifies_other_scalars():
+    assert _serialize_form_fields({"n": 5, "f": 1.5, "s": "hi"}) == {
+        "n": "5",
+        "f": "1.5",
+        "s": "hi",
+    }
+
+
+def test_serialize_form_fields_does_not_confuse_ints_with_bools():
+    # bool subclasses int; identity checks must keep 1/0 from becoming "true"/"false".
+    assert _serialize_form_fields({"one": 1, "zero": 0}) == {"one": "1", "zero": "0"}
+
+
+def test_serialize_form_fields_returns_empty_for_empty_dict():
+    assert _serialize_form_fields({}) == {}
+
+
+@pytest.mark.parametrize("value", [None, "not-a-dict", 7, ["a", "b"], object()])
+def test_serialize_form_fields_returns_empty_for_non_dict(value):
+    assert _serialize_form_fields(value) == {}

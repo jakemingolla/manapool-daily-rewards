@@ -18,6 +18,31 @@ from manapool.transport import Transport
 _REDIRECT_CODES = (301, 302, 303, 307, 308)
 
 
+def _serialize_form_fields(form_data: Any) -> dict[str, str]:
+    """Coerce a SvelteKit form payload into ``x-www-form-urlencoded`` fields.
+
+    Booleans are encoded as ``"true"``/``"false"`` (SvelteKit's
+    ``request.formData()`` only yields strings, so we mirror its own
+    serialization). ``None`` values are dropped so optional fields don't show
+    up as the literal string ``"None"``. A non-dict ``form_data`` (e.g.
+    ``None`` when the page exposes no form) yields an empty dict, letting the
+    caller still ``POST`` the action with no explicit fields.
+    """
+    if not isinstance(form_data, dict):
+        return {}
+    body: dict[str, str] = {}
+    for key, value in form_data.items():
+        if value is None:
+            continue
+        if value is True:
+            body[key] = "true"
+        elif value is False:
+            body[key] = "false"
+        else:
+            body[key] = str(value)
+    return body
+
+
 class ManaPoolClient:
     """Talks to Mana Pool's SvelteKit + Supabase HTTP endpoints.
 
@@ -150,21 +175,9 @@ class ManaPoolClient:
 
     def claim(self, form_data: Any) -> ClaimResult:
         """Submit the Daily Reward claim via the default ``POST /daily`` action."""
-        body: dict[str, str] = {}
-        if isinstance(form_data, dict):
-            for key, value in form_data.items():
-                if value is None:
-                    continue
-                if value is True:
-                    body[key] = "true"
-                elif value is False:
-                    body[key] = "false"
-                else:
-                    body[key] = str(value)
-
         resp = self._transport.post(
             f"{self._settings.base_url}{endpoints.CLAIM_DAILY}",
-            data=body,
+            data=_serialize_form_fields(form_data),
             headers={
                 "Origin": self._settings.base_url,
                 "Accept": "application/json",

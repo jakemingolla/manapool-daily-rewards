@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import IntEnum
 from typing import Any
 
 from manapool.client import ManaPoolClient
@@ -14,6 +15,19 @@ from manapool.presentation import format_mana, render_status
 DAILY_RULES_URL = "https://manapool.com/daily/rules"
 
 
+class ExitCode(IntEnum):
+    """Process exit codes for the ``manapool`` CLI.
+
+    Values are part of the public CLI contract and are documented in the
+    README; do not renumber existing members.
+    """
+
+    SUCCESS = 0
+    FAILURE = 1
+    AUTH_FAILED = 2
+    NOT_ELIGIBLE = 3
+
+
 class DailyRewardService:
     """Drives the check/claim flow using an injected client and console."""
 
@@ -21,41 +35,41 @@ class DailyRewardService:
         self._client = client
         self._console = console
 
-    def run(self, credentials: Credentials, *, check_only: bool = False) -> int:
+    def run(self, credentials: Credentials, *, check_only: bool = False) -> ExitCode:
         try:
             self._client.login(credentials)
         except ManaPoolError as exc:
             self._console.err(f"ERROR: {exc}")
-            return 2
+            return ExitCode.AUTH_FAILED
 
         try:
             status = self._client.get_status()
         except ManaPoolError as exc:
             self._console.err(f"ERROR: could not read status: {exc}")
-            return 1
+            return ExitCode.FAILURE
 
         self._print_status(status)
 
         if check_only:
-            return 0
+            return ExitCode.SUCCESS
 
         if status.already_claimed:
             self._console.out("\nNothing to do: today's reward was already claimed.")
-            return 0
+            return ExitCode.SUCCESS
 
         if not status.eligible:
             self._console.err(
                 "\nNot eligible to claim: no purchase in the last 30 days "
                 "(or no alternate-entry allowance). See " + DAILY_RULES_URL
             )
-            return 3
+            return ExitCode.NOT_ELIGIBLE
 
         self._console.out("\nClaiming today's Daily Reward...")
         try:
             result = self._client.claim(status.claim_form_data)
         except ManaPoolError as exc:
             self._console.err(f"ERROR: {exc}")
-            return 1
+            return ExitCode.FAILURE
 
         amount = result.award_amount
         title = result.award_title
@@ -68,7 +82,7 @@ class DailyRewardService:
             self._console.out("Claim submitted.")
 
         self._report_after(status, amount)
-        return 0
+        return ExitCode.SUCCESS
 
     def _print_status(self, status: Status) -> None:
         for line in render_status(status):
