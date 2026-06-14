@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from enum import IntEnum
-from typing import Any
 
 from manapool.client import ManaPoolClient
 from manapool.config import Credentials
@@ -88,15 +87,15 @@ class DailyRewardService:
         for line in render_status(status):
             self._console.out(line)
 
-    def _report_after(self, before_status: Status, amount: Any) -> None:
+    def _report_after(self, before_status: Status, amount: int | None) -> None:
         try:
             after = self._client.get_status()
         except ManaPoolError:
             return
         self._print_status(after)
-        if amount is None and isinstance(after.extra_mana_available, (int, float)):
+        if amount is None and after.extra_mana_available is not None:
             before = before_status.extra_mana_available
-            if isinstance(before, (int, float)):
-                gained = int(after.extra_mana_available) - int(before)
+            if before is not None:
+                gained = after.extra_mana_available - before
                 if gained > 0:
                     self._console.out(f"Extra Mana increased by {gained:,}.")

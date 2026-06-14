@@ -8,6 +8,7 @@ from typing import Any
 from manapool import endpoints
 from manapool.auth import login as auth_login
 from manapool.auth import supabase_session_from_cookies
+from manapool.coerce import as_dict, as_int, as_str
 from manapool.config import Credentials, Settings
 from manapool.console import Console, StreamConsole
 from manapool.errors import ManaPoolError, NotAuthenticated
@@ -168,12 +169,12 @@ class ManaPoolClient:
             already_claimed=bool(daily.get("alreadyClaimed")),
             eligible=bool(daily.get("hasRecentOrder")),
             seconds_until_reset=int(daily.get("secondsUntilMidnightTonight") or 0),
-            extra_mana_available=balance.get("points"),
-            pending_extra_mana=balance.get("pending_points"),
-            claim_form_data=find_key(form, "data") if form else None,
+            extra_mana_available=as_int(balance.get("points")),
+            pending_extra_mana=as_int(balance.get("pending_points")),
+            claim_form_data=as_dict(find_key(form, "data")) if form else None,
         )
 
-    def claim(self, form_data: Any) -> ClaimResult:
+    def claim(self, form_data: dict[str, Any] | None) -> ClaimResult:
         """Submit the Daily Reward claim via the default ``POST /daily`` action."""
         resp = self._transport.post(
             f"{self._settings.base_url}{endpoints.CLAIM_DAILY}",
@@ -193,8 +194,8 @@ class ManaPoolClient:
         if resp.status_code >= 400:
             raise ManaPoolError(f"Claim failed: server returned {resp.status_code}")
 
-        award_amount: Any = None
-        award_title: Any = None
+        award_amount: int | None = None
+        award_title: str | None = None
         try:
             result = resp.json()
         except ValueError:
@@ -203,8 +204,8 @@ class ManaPoolClient:
         if isinstance(result, dict) and isinstance(result.get("data"), str):
             try:
                 decoded = unflatten(json.loads(result["data"]))
-                award_amount = find_key(decoded, "awardAmount")
-                award_title = find_key(decoded, "awardTitle")
+                award_amount = as_int(find_key(decoded, "awardAmount"))
+                award_title = as_str(find_key(decoded, "awardTitle"))
             except (ValueError, IndexError, KeyError):
                 pass
 
