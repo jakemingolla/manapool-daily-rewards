@@ -14,6 +14,9 @@ jobs:
     name: Claim
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v8.2.0
@@ -24,3 +27,7 @@ jobs:
           MANAPOOL_ACCOUNT_USERNAME: ${{ secrets.MANAPOOL_ACCOUNT_USERNAME }}
           MANAPOOL_ACCOUNT_PASSWORD: ${{ secrets.MANAPOOL_ACCOUNT_PASSWORD }}
         run: uv run manapool
+      # Prevents GitHub from auto-disabling this scheduled workflow after 60
+      # days of repository inactivity. Re-enables via the API (no dummy commits).
+      - if: github.event_name == 'schedule'
+        uses: liskin/gh-workflow-keepalive@f72ff1a1336129f29bf0166c0fd0ca6cf1bcb38c # v1.2.1
