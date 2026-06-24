@@ -58,6 +58,13 @@ def unflatten(parsed: Any) -> Any:
                     return int(value[1])
                 if tag in ("RegExp", "Object"):
                     return value[1]
+                if tag == "Promise":
+                    # SvelteKit serializes a deferred promise as
+                    # ``["Promise", index]``; the resolved value streams later
+                    # as a separate ``type: "chunk"`` line we don't track. We
+                    # never consume deferred nodes, so surface it as None
+                    # instead of treating "Promise" as an index and crashing.
+                    return None
                 if tag == "Set":
                     result_set: list[Any] = []
                     seen[index] = result_set
