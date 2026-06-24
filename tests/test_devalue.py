@@ -44,3 +44,10 @@ def test_set_tag():
 def test_map_tag():
     payload = [{"m": 1}, ["Map", 2, 3, 4, 5], "k1", "v1", "k2", "v2"]
     assert unflatten(payload) == {"m": {"k1": "v1", "k2": "v2"}}
+
+
+def test_promise_tag_resolves_to_none():
+    # SvelteKit deferred promises (["Promise", index]) stream their value in a
+    # later chunk we drop; decoding must not crash on the placeholder.
+    payload = [{"recommendations": 1}, ["Promise", 2], 1]
+    assert unflatten(payload) == {"recommendations": None}

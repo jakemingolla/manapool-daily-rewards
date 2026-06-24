@@ -35,6 +35,21 @@ def test_fetch_node_data_non_json_raises():
         client.fetch_node_data("/daily/__data.json")
 
 
+def test_fetch_node_data_parses_streamed_sveltekit_data():
+    # SvelteKit streams deferred promises as extra newline-delimited "chunk"
+    # objects after the main "data" document; only the first JSON value matters.
+    transport = FakeTransport()
+    document = json.dumps(_node_data_payload({"type": "data", "data": [{"a": 1}, "x"]}))
+    chunk = json.dumps({"type": "chunk", "id": 1, "data": ["unloaded", []]})
+    transport.register(
+        "GET",
+        "/daily/__data.json",
+        FakeResponse(text=document + "\n" + chunk + "\n"),
+    )
+    client = ManaPoolClient(transport, SETTINGS)
+    assert client.fetch_node_data("/daily/__data.json") == {"a": "x"}
+
+
 def test_fetch_node_data_merges_nodes_and_skips_others():
     transport = FakeTransport()
     payload = _node_data_payload(

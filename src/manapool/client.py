@@ -19,6 +19,24 @@ from manapool.transport import Transport
 _REDIRECT_CODES = (301, 302, 303, 307, 308)
 
 
+def _decode_sveltekit_data(resp: Any) -> Any:
+    """Decode a SvelteKit ``__data.json`` (``text/sveltekit-data``) body.
+
+    The body is newline-delimited JSON: the page document (``type: "data"``)
+    on the first line, optionally followed by ``type: "chunk"`` lines that
+    resolve deferred promises streamed after the initial render. ``requests``'
+    ``Response.json()`` rejects that trailing data with a ``ValueError``, so we
+    pull just the first JSON value out of the body and ignore the rest (we don't
+    consume any deferred nodes). Falls back to ``resp.json()`` when the response
+    exposes no body text (test fakes provide decoded JSON directly).
+    """
+    text = getattr(resp, "text", "") or ""
+    if text.strip():
+        payload, _ = json.JSONDecoder().raw_decode(text.lstrip())
+        return payload
+    return resp.json()
+
+
 def _serialize_form_fields(form_data: Any) -> dict[str, str]:
     """Coerce a SvelteKit form payload into ``x-www-form-urlencoded`` fields.
 
@@ -87,7 +105,7 @@ class ManaPoolClient:
             raise NotAuthenticated(f"{path} redirected (not authenticated)")
 
         try:
-            payload = resp.json()
+            payload = _decode_sveltekit_data(resp)
         except ValueError as exc:
             raise ManaPoolError(f"Unexpected non-JSON response from {path}") from exc
 
