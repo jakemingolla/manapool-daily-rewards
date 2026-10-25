@@ -71,6 +71,75 @@ Claiming today's Daily Reward...
 Claimed! Awarded 10 Extra Mana.
 ```
 
+Print the results as a single JSON object on stdout instead of text. Exit
+codes are unchanged, and failures are reported as `{"error": "..."}` on stdout:
+
+```bash
+uv run manapool --json
+```
+
+Combine with `--check-only` to read status without ever claiming:
+
+```bash
+uv run manapool --check-only --json
+```
+
+Example `--json` output (check-only):
+
+```json
+{
+  "status": {
+    "extra_mana_available": 16,
+    "eligible": true,
+    "already_claimed": false,
+    "seconds_until_reset": 21238,
+    "pending_extra_mana": 1396
+  },
+  "claimed": false,
+  "claim": null,
+  "status_after": null
+}
+```
+
+Example `--json` output (eligible, reward claimed):
+
+```json
+{
+  "status": {
+    "extra_mana_available": 16,
+    "eligible": true,
+    "already_claimed": false,
+    "seconds_until_reset": 21238,
+    "pending_extra_mana": 1396
+  },
+  "claimed": true,
+  "claim": {
+    "award_amount": 10,
+    "award_title": "Daily"
+  },
+  "status_after": {
+    "extra_mana_available": 26,
+    "eligible": true,
+    "already_claimed": true,
+    "seconds_until_reset": 21238,
+    "pending_extra_mana": 1396
+  }
+}
+```
+
+Example `--json` output (failure):
+
+```json
+{
+  "error": "Not eligible to claim: no purchase in the last 30 days (or no alternate-entry allowance). See https://manapool.com/daily/rules"
+}
+```
+
+Fields: `status` is the pre-claim snapshot; `claimed`/`claim` report the claim
+outcome (`claim` is `null` when nothing was claimed); `status_after` is a
+fresh snapshot taken after a successful claim (`null` otherwise);
+`pending_extra_mana` is omitted when the site reports none.
+
 ### Scheduled runs (GitHub Actions)
 
 `.github/workflows/daily-reward.yml` runs `manapool` daily at 01:00 UTC
@@ -102,7 +171,7 @@ The code is split by domain under `src/manapool/`:
 - `transport.py` - the `Transport` protocol and the `requests`-backed implementation.
 - `auth/` - SvelteKit sign-in and Supabase session reconstruction.
 - `parsing/` - SvelteKit `devalue` decoding and nested-structure search.
-- `presentation.py` - pure status formatting.
+- `presentation.py` - pure status formatting and JSON serialization.
 - `config.py`, `console.py`, `models.py`, `errors.py` - settings/credentials, output, domain models, exceptions.
 
 Network access and I/O are injected (`Transport`, `Console`), so the tests run

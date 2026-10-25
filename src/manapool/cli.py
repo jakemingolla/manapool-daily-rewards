@@ -13,6 +13,7 @@ from manapool.config import (
     load_credentials,
 )
 from manapool.console import StreamConsole
+from manapool.presentation import render_json
 from manapool.service import DailyRewardService, ExitCode
 from manapool.transport import RequestsTransport
 
@@ -26,6 +27,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--check-only",
         action="store_true",
         help="Only report status; never claim the reward.",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the results as a single JSON object instead of text.",
     )
     parser.add_argument(
         "--debug",
@@ -42,9 +48,11 @@ def main(argv: Sequence[str] | None = None) -> ExitCode:
 
     credentials = load_credentials()
     if credentials is None:
-        console.err(
-            f"ERROR: set {USERNAME_ENV} and {PASSWORD_ENV} (e.g. in a .env file)."
-        )
+        message = f"set {USERNAME_ENV} and {PASSWORD_ENV} (e.g. in a .env file)."
+        if args.json:
+            console.out(render_json({"error": message}))
+        else:
+            console.err(f"ERROR: {message}")
         return ExitCode.AUTH_FAILED
 
     settings = Settings()
@@ -52,7 +60,11 @@ def main(argv: Sequence[str] | None = None) -> ExitCode:
     client = ManaPoolClient(transport, settings, console)
     service = DailyRewardService(client, console)
 
-    return service.run(credentials, check_only=args.check_only)
+    return service.run(
+        credentials,
+        check_only=args.check_only,
+        json_output=args.json,
+    )
 
 
 if __name__ == "__main__":
